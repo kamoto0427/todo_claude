@@ -4,9 +4,21 @@ const list = document.getElementById('todo-list');
 const emptyMsg = document.getElementById('empty-msg');
 const filterBtns = document.querySelectorAll('.filter-btn');
 const taskCountEl = document.getElementById('task-count');
+const dueInput = document.getElementById('due-input');
+const prioBtns = document.querySelectorAll('.prio-btn');
 
 let todos = JSON.parse(localStorage.getItem('todos') || '[]');
 let currentFilter = 'all';
+let selectedPriority = 'medium';
+
+// Priority button selection
+prioBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    prioBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPriority = btn.dataset.prio;
+  });
+});
 
 function save() {
   localStorage.setItem('todos', JSON.stringify(todos));
@@ -29,9 +41,32 @@ function formatDate(iso) {
   return `${y}/${mo}/${da} ${h}:${mi}`;
 }
 
+function formatDueDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, mo, da] = dateStr.split('-');
+  return `${y}/${mo}/${da}`;
+}
+
+function isOverdue(dateStr, done) {
+  if (!dateStr || done) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dateStr + 'T00:00:00');
+  return due < today;
+}
+
+const PRIORITY_LABEL = { high: '高', medium: '中', low: '低' };
+
 const clockSvg = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
   <circle cx="8" cy="8" r="6.5"/>
   <polyline points="8,4.5 8,8 10.5,10"/>
+</svg>`;
+
+const calSvg = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="2" y="3" width="12" height="11" rx="2"/>
+  <line x1="5" y1="1.5" x2="5" y2="4.5"/>
+  <line x1="11" y1="1.5" x2="11" y2="4.5"/>
+  <line x1="2" y1="7" x2="14" y2="7"/>
 </svg>`;
 
 function updateCount() {
@@ -40,7 +75,7 @@ function updateCount() {
   taskCountEl.textContent = active;
   if (String(active) !== prev) {
     taskCountEl.classList.remove('bump');
-    void taskCountEl.offsetWidth; // reflow
+    void taskCountEl.offsetWidth;
     taskCountEl.classList.add('bump');
   }
 }
@@ -61,7 +96,8 @@ function render() {
   filtered.forEach((todo) => {
     const i = todos.indexOf(todo);
     const li = document.createElement('li');
-    li.className = 'todo-item' + (todo.done ? ' done' : '');
+    const overdue = isOverdue(todo.dueDate, todo.done);
+    li.className = 'todo-item' + (todo.done ? ' done' : '') + (overdue ? ' overdue' : '');
 
     // Checkbox
     const checkWrapper = document.createElement('label');
@@ -86,18 +122,42 @@ function render() {
     const content = document.createElement('div');
     content.className = 'todo-content';
 
+    // Priority badge + text row
+    const textRow = document.createElement('div');
+    textRow.className = 'text-row';
+
+    const prio = todo.priority || 'medium';
+    const prioBadge = document.createElement('span');
+    prioBadge.className = `prio-badge prio-${prio}`;
+    prioBadge.textContent = PRIORITY_LABEL[prio];
+
     const textSpan = document.createElement('span');
     textSpan.className = 'todo-text';
     textSpan.textContent = todo.text;
 
-    const dateSpan = document.createElement('span');
-    dateSpan.className = 'todo-date';
+    textRow.appendChild(prioBadge);
+    textRow.appendChild(textSpan);
+
+    // Meta row (created + due)
+    const metaRow = document.createElement('div');
+    metaRow.className = 'meta-row';
+
     if (todo.createdAt) {
+      const dateSpan = document.createElement('span');
+      dateSpan.className = 'todo-date';
       dateSpan.innerHTML = clockSvg + formatDate(todo.createdAt);
+      metaRow.appendChild(dateSpan);
     }
 
-    content.appendChild(textSpan);
-    content.appendChild(dateSpan);
+    if (todo.dueDate) {
+      const dueSpan = document.createElement('span');
+      dueSpan.className = 'todo-due' + (overdue ? ' overdue-text' : '');
+      dueSpan.innerHTML = calSvg + formatDueDate(todo.dueDate) + (overdue ? ' 期限超過' : '');
+      metaRow.appendChild(dueSpan);
+    }
+
+    content.appendChild(textRow);
+    content.appendChild(metaRow);
 
     // Delete button
     const deleteBtn = document.createElement('button');
@@ -122,12 +182,19 @@ function render() {
 function addTodo() {
   const text = input.value.trim();
   if (!text) return;
-  todos.push({ text, done: false, createdAt: new Date().toISOString() });
+  todos.push({
+    text,
+    done: false,
+    priority: selectedPriority,
+    dueDate: dueInput.value || null,
+    createdAt: new Date().toISOString()
+  });
   save();
   currentFilter = 'all';
   filterBtns.forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
   render();
   input.value = '';
+  dueInput.value = '';
   input.focus();
 }
 

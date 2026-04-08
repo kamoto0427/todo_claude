@@ -14,8 +14,24 @@
       <span class="task-count" id="task-count">0</span>
     </div>
     <div class="input-area">
-      <input type="text" id="todo-input" placeholder="新しいタスクを入力..." autocomplete="off">
-      <button id="add-btn">追加</button>
+      <div class="input-row">
+        <input type="text" id="todo-input" placeholder="新しいタスクを入力..." autocomplete="off">
+        <button id="add-btn">追加</button>
+      </div>
+      <div class="input-meta">
+        <div class="priority-group">
+          <span class="meta-label">優先度</span>
+          <div class="priority-btns">
+            <button class="prio-btn" data-prio="high">高</button>
+            <button class="prio-btn active" data-prio="medium">中</button>
+            <button class="prio-btn" data-prio="low">低</button>
+          </div>
+        </div>
+        <div class="due-group">
+          <span class="meta-label">期限</span>
+          <input type="date" id="due-input">
+        </div>
+      </div>
     </div>
     <div class="filter-area">
       <button class="filter-btn active" data-filter="all">すべて</button>
