@@ -8,12 +8,22 @@
 </head>
 <body>
   <div class="container">
-    <h1>Todo</h1>
+    <div class="header">
+      <div class="header-icon">✦</div>
+      <h1>My Tasks</h1>
+      <span class="task-count" id="task-count">0</span>
+    </div>
     <div class="input-area">
       <input type="text" id="todo-input" placeholder="新しいタスクを入力..." autocomplete="off">
       <button id="add-btn">追加</button>
     </div>
+    <div class="filter-area">
+      <button class="filter-btn active" data-filter="all">すべて</button>
+      <button class="filter-btn" data-filter="active">未完了</button>
+      <button class="filter-btn" data-filter="done">完了</button>
+    </div>
     <ul id="todo-list"></ul>
+    <p id="empty-msg" class="empty-msg">タスクがありません</p>
   </div>
   <script src="app.js"></script>
 </body>
